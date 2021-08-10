@@ -3,6 +3,7 @@ module.exports = {
   openSeedDirectory,
   openTorrentFile,
   openTorrentAddress,
+  openMultiplayerSettings,
   openFiles
 }
 
@@ -93,6 +94,11 @@ function openTorrentFile () {
 function openTorrentAddress () {
   log('openTorrentAddress')
   windows.main.dispatch('openTorrentAddress')
+}
+
+function openMultiplayerSettings () {
+  log('openMultiplayerSettings')
+  windows.main.dispatch('openMultiplayerSettings')
 }
 
 /**

@@ -293,6 +293,15 @@ module.exports = class TorrentListController {
       type: 'separator'
     }))
 
+    menu.append(new remote.MenuItem({
+      label: 'Play in multiplayer room',
+      click: () => dispatch('playTorrentMultiplayer', torrentSummary.infoHash, torrentSummary.index, torrentSummary.magnetURI),
+    }))
+
+    menu.append(new remote.MenuItem({
+      type: 'separator'
+    }))
+
     const sortedByName = this.state.saved.prefs.sortByName
     menu.append(new remote.MenuItem({
       label: `${sortedByName ? '✓ ' : ''}Sort by Name`,

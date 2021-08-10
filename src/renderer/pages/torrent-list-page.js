@@ -235,6 +235,7 @@ module.exports = class TorrentList extends React.Component {
 
     // Only show the play/dowload buttons for torrents that contain playable media
     let playButton
+    let multiplayerPlayButton
     if (!torrentSummary.error && TorrentPlayer.isPlayableTorrentSummary(torrentSummary)) {
       playButton = (
         <i
@@ -246,19 +247,32 @@ module.exports = class TorrentList extends React.Component {
           play_circle_outline
         </i>
       )
+      multiplayerPlayButton = (
+        <i
+          key='multi-play-button'
+          title='Start in multiplayer'
+          className='icon play'
+          onClick={dispatcher('playFile', infoHash)}
+        >
+          play_circle_outline
+        </i>
+      )
     }
 
     return (
       <div className='torrent-controls'>
         {playButton}
-        <i
-          key='delete-button'
-          className='icon delete'
-          title='Remove torrent'
-          onClick={dispatcher('confirmDeleteTorrent', infoHash, false)}
-        >
-          close
-        </i>
+        <div>
+          {multiplayerPlayButton}
+          <i
+            key='delete-button'
+            className='icon delete'
+            title='Remove torrent'
+            onClick={dispatcher('confirmDeleteTorrent', infoHash, false)}
+          >
+            close
+          </i>
+        </div>
       </div>
     )
   }

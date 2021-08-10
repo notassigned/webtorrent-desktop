@@ -56,7 +56,7 @@ function build () {
   } else if (platform === 'linux') {
     buildLinux(printDone)
   } else {
-    buildDarwin(function (err) {
+    buildWin32(function (err) {
       printDone(err)
       buildWin32(function (err) {
         printDone(err)

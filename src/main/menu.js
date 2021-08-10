@@ -1,6 +1,7 @@
 module.exports = {
   init,
   togglePlaybackControls,
+  toggleInRoom,
   setWindowFocus,
   setAllowNav,
   onPlayerUpdate,
@@ -18,6 +19,10 @@ let menu = null
 function init () {
   menu = Menu.buildFromTemplate(getMenuTemplate())
   Menu.setApplicationMenu(menu)
+}
+
+function toggleInRoom (flag) {
+  getMenuItem('Leave room').enabled = flag
 }
 
 function togglePlaybackControls (flag) {
@@ -299,8 +304,26 @@ function getMenuTemplate () {
       ]
     },
     {
+      label: 'Multiplayer',
+      submenu: [
+        {
+          label: 'Torrent2gether',
+          accelerator: 'CmdOrCtrl+m',
+          click: () => {
+            const dialog = require('./dialog')
+            dialog.openMultiplayerSettings()
+          }
+        },
+        {
+          label: 'Leave room',
+          click: () => {
+            windows.main.dispatch('leaveMultiplayerRoom')
+          }
+        }
+      ]
+    },
+    {
       label: 'Help',
-      role: 'help',
       submenu: [
         {
           label: 'Learn more about ' + config.APP_NAME,
@@ -446,7 +469,7 @@ function getMenuTemplate () {
       })
 
     // Help menu (Windows, Linux)
-    template[5].submenu.push(
+    template[6].submenu.push(
       {
         type: 'separator'
       },

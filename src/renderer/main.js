@@ -24,6 +24,7 @@ const createGetter = require('fn-getter')
 const debounce = require('debounce')
 const dragDrop = require('drag-drop')
 const electron = require('electron')
+const {dialog} = require('electron')
 const fs = require('fs')
 const React = require('react')
 const ReactDOM = require('react-dom')
@@ -33,10 +34,13 @@ const telemetry = require('./lib/telemetry')
 const sound = require('./lib/sound')
 const TorrentPlayer = require('./lib/torrent-player')
 
+
+
 // Perf optimization: Needed immediately, so do not lazy load it below
 const TorrentListController = require('./controllers/torrent-list-controller')
 
 const App = require('./pages/app')
+const { node } = require('prop-types')
 
 // Electron apps have two processes: a main process (node) runs first and starts
 // a renderer process (essentially a Chrome window). We're in the renderer process,
@@ -49,6 +53,7 @@ require('./lib/dispatcher').setDispatch(dispatch)
 
 // From dispatch(...), events are sent to one of the controllers
 let controllers = null
+
 
 // This dependency is the slowest-loading, so we lazy load it
 let Cast = null
@@ -114,6 +119,10 @@ function onState (err, _state) {
     folderWatcher: createGetter(() => {
       const FolderWatcherController = require('./controllers/folder-watcher-controller')
       return new FolderWatcherController()
+    }),
+    libp2p: createGetter(() => {
+      const Libp2pController = require('./controllers/libp2p-controller')
+      return new Libp2pController(state)
     })
   }
 
@@ -242,8 +251,13 @@ const dispatchHandlers = {
   openTorrentFile: () => ipcRenderer.send('openTorrentFile'),
   openFiles: () => ipcRenderer.send('openFiles'), /* shows the open file dialog */
   openTorrentAddress: () => { state.modal = { id: 'open-torrent-address-modal' } },
-
+  openMultiplayerSettings: () => { state.modal = { id: 'open-multiplayer-settings-modal' } },
+  joinMultiplayerRoom: (username, roomId) => { controllers.libp2p().joinRoom(username, roomId) },
+  leaveMultiplayerRoom: () => controllers.libp2p().leaveRoom(),
   addTorrent: (torrentId) => controllers.torrentList().addTorrent(torrentId),
+  playTorrentMultiplayer: (torrentId) => {
+    controllers.libp2p().sendTorrent(torrentId)
+  },
   showCreateTorrent: (paths) => controllers.torrentList().showCreateTorrent(paths),
   createTorrent: (options) => controllers.torrentList().createTorrent(options),
   toggleTorrent: (infoHash) => controllers.torrentList().toggleTorrent(infoHash),
@@ -272,12 +286,31 @@ const dispatchHandlers = {
   resumePausedTorrents: () => controllers.torrentList().resumePausedTorrents(),
 
   // Playback
-  playFile: (infoHash, index) => controllers.playback().playFile(infoHash, index),
-  playPause: () => controllers.playback().playPause(),
+  playFile: (infoHash, index) => {
+    controllers.playback().playFile(infoHash, index)
+  },
+  playFileMultiplayer: (infoHash, index, url) => {
+    controllers.playback().playFile(infoHash, index)
+    controllers.libp2p().sendRemoteAction('addFile', {url})
+  },
+  playPause: () => {
+    controllers.playback().playPause()
+    var action = state.playing.isPaused ? 'pause' : 'play'
+    controllers.libp2p().sendRemoteAction(action, {time: this.state.playing.currentTime})
+  },
+  play: () => controllers.playback().play(),
+  pause: () => controllers.playback().pause(),
   nextTrack: () => controllers.playback().nextTrack(),
   previousTrack: () => controllers.playback().previousTrack(),
   skip: (time) => controllers.playback().skip(time),
-  skipTo: (time) => controllers.playback().skipTo(time),
+  skipTo: (time) => {
+    controllers.playback().skipTo(time)
+    controllers.libp2p().sendRemoteAction('pause', {time})
+    dispatch(pause)
+  },
+  skipToFromRemote: (time) => {
+    controllers.playback().skipTo(time)
+  },
   preview: (x) => controllers.playback().preview(x),
   clearPreview: () => controllers.playback().clearPreview(),
   changePlaybackRate: (dir) => controllers.playback().changePlaybackRate(dir),
@@ -340,7 +373,7 @@ const dispatchHandlers = {
   // Everything else
   onOpen,
   error: onError,
-  uncaughtError: (proc, err) => telemetry.logUncaughtError(proc, err),
+  uncaughtError: (proc, err) => {console.log(proc, err);telemetry.logUncaughtError(proc, err)},
   stateSave: () => State.save(state),
   stateSaveImmediate: () => State.saveImmediate(state),
   update: () => {} // No-op, just trigger an update
@@ -395,6 +428,9 @@ function setupIpc () {
 
   State.on('stateSaved', () => ipcRenderer.send('stateSaved'))
 }
+
+
+
 
 // Quits any modal popovers and returns to the torrent list screen
 function backToList () {
