@@ -14,7 +14,7 @@
 ## About
 This fork of [Webtorrent Desktop](https://github.com/webtorrent/webtorrent-desktop) adds the ability to join a room with your friends and watch torrents together in a decentralized fasion. This is accomplished thanks to [libp2p](https://github.com/libp2p/libp2p), an awesome modular peer to peer networking stack.
 
-To join a multiplayer room you can press CTRL+M, or click the multiplayer dropdown menu at the top and selecting Torrent2gether. Simply enter a name (optional), and the name of a room. Anyone else who enters the same room name will be in the same [gossipsub](https://docs.libp2p.io/concepts/publish-subscribe/) room. The application syncs play/pause/scrubbing with others in the room. You can send a torrnet to other clients in the room by right clicking it and selecting "Play in multiplayer".
+To join a multiplayer room you can press CTRL+M, or click 'Torrent2gether' in the multiplayer dropdown menu. Simply enter a name (optional), and the name of a room. Anyone else who enters the same room name will be in the same [gossipsub](https://docs.libp2p.io/concepts/publish-subscribe/) topic. The application syncs play/pause/scrubbing with others in the room. You can send a torrnet to other clients in the room by right clicking it and selecting "Play in multiplayer".
 
 ## Install
 
@@ -27,7 +27,7 @@ Download the latest version of WebTorrent Desktop from
 
 ### Advanced Install
 
-- Download specific installer files from the [GitHub releases](https://github.com/webtorrent/webtorrent-desktop/releases) page.
+- Download specific installer files from the [GitHub releases](https://github.com/notassigned/webtorrent-desktop-multiplayer/releases) page.
 
 - Use [Homebrew-Cask](https://github.com/caskroom/homebrew-cask) to install from the command line:
 
@@ -47,18 +47,20 @@ Download the latest version of WebTorrent Desktop from
 
 ## How to Contribute
 
+If you are a libp2p wizard, take a look at the [libp2p-controller](https://github.com/notassigned/webtorrent-desktop-multiplayer/blob/master/src/renderer/controllers/libp2p-controller.js).
+
 ### Get the code
 
 ```
-$ git clone https://github.com/webtorrent/webtorrent-desktop.git
-$ cd webtorrent-desktop
-$ npm install
+git clone https://github.com/notassigned/webtorrent-desktop-multiplayer.git
+cd webtorrent-desktop
+npm install
 ```
 
 ### Run the app
 
 ```
-$ npm start
+npm start
 ```
 
 ### Watch the code
@@ -66,19 +68,19 @@ $ npm start
 Restart the app automatically every time code changes. Useful during development.
 
 ```
-$ npm run watch
+npm run watch
 ```
 
 ### Run linters
 
 ```
-$ npm test
+npm test
 ```
 
 ### Run integration tests
 
 ```
-$ npm run test-integration
+npm run test-integration
 ```
 
 The integration tests use Spectron and Tape. They click through the app, taking screenshots and
@@ -106,13 +108,13 @@ or keyboard while the tests are running.
 Builds app binaries for Mac, Linux, and Windows.
 
 ```
-$ npm run package
+npm run package
 ```
 
 To build for one platform:
 
 ```
-$ npm run package -- [platform] [options]
+npm run package -- [platform] [options]
 ```
 
 Where `[platform]` is `darwin`, `linux`, `win32`, or `all` (default).
