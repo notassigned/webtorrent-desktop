@@ -4,20 +4,17 @@
     <img src="https://webtorrent.io/img/WebTorrent.png" alt="WebTorrent" width="200">
   </a>
   <br>
-  WebTorrent Desktop
+  WebTorrent Desktop (Multiplayer)
   <br>
   <br>
 </h1>
 
 <h4 align="center">The streaming torrent app. For Mac, Windows, and Linux.</h4>
 
-<p align="center">
-  <a href="https://discord.gg/cnXkm4Z"><img src="https://img.shields.io/discord/612575111718895616" alt="discord"></a>
-  <a href="https://travis-ci.org/webtorrent/webtorrent-desktop"><img src="https://img.shields.io/travis/webtorrent/webtorrent-desktop/master.svg" alt="travis"></a>
-  <a href="https://github.com/webtorrent/webtorrent-desktop/releases"><img src="https://img.shields.io/github/release/webtorrent/webtorrent-desktop.svg" alt="github release version"></a>
-  <a href="https://github.com/webtorrent/webtorrent-desktop/releases"><img src="https://img.shields.io/github/downloads/webtorrent/webtorrent-desktop/total.svg" alt="github release downloads"></a>
-  <a href="https://standardjs.com"><img src="https://img.shields.io/badge/code_style-standard-brightgreen.svg" alt="Standard - JavaScript Style Guide"></a>
-</p>
+## About
+This fork of [Webtorrent Desktop](https://github.com/webtorrent/webtorrent-desktop) adds the ability to join a room with your friends and watch torrents together in a decentralized fasion. This is accomplished thanks to [libp2p](https://github.com/libp2p/libp2p), an awesome modular peer to peer networking stack.
+
+To join a multiplayer room you can press CTRL+M, or click the multiplayer dropdown menu at the top and selecting Torrent2gether. Simply enter a name (optional), and the name of a room. Anyone else who enters the same room name will be in the same [gossipsub](https://docs.libp2p.io/concepts/publish-subscribe/) room. The application syncs play/pause/scrubbing with others in the room. You can send a torrnet to other clients in the room by right clicking it and selecting "Play in multiplayer".
 
 ## Install
 
