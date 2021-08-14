@@ -89,7 +89,7 @@ module.exports = class Libp2pController {
         console.log('Joining room ' + roomId)
         state.peerInfo = new Map()
         state.multiplayerRoom = roomId
-        state.topic = '/torrent2gether/1.0.0/'+sha256(roomId)
+        state.topic = sha256('/torrent2gether/1.0.0/'+roomId)
         if(typeof state.node === 'undefined'){
           state.node = await createNode()
         }
@@ -140,7 +140,8 @@ module.exports = class Libp2pController {
           }
           break
         case 'remoteAction':
-          this.handleRemoteAction(msg.remoteAction.action, msg.remoteAction.args)
+          this.handleRemoteAction(msg.remoteAction.action, 
+            msg.remoteAction.args, message.receivedFrom)
           break
         case 'disconnect':
           this.peerDisconnected(message.receivedFrom)
@@ -150,14 +151,19 @@ module.exports = class Libp2pController {
     catch(ex){console.log(ex)}
   }
 
-  handleRemoteAction(action, args){
+  handleRemoteAction(action, args, from){
     try {
-      if(!this.state.inRoom) return
+      const state = this.state
+      if(!state.inRoom) return
       switch(action)
       {
         case 'play-torrent':
           //todo: ask user first
-          dispatch('addTorrent', args.url)
+          //verify by hashing url with room id
+          //only those with roomId can add torrents
+          if(sha256(args.url + state.roomId + from) == args.verification)
+            dispatch('addTorrent', args.url)
+          else console.log('Remote torrent verification failed')
           break
         case 'play':
           dispatch('skipToFromRemote', args.time)
@@ -202,7 +208,11 @@ module.exports = class Libp2pController {
 
   sendTorrent(torrentURL){
     try{
-      this.sendRemoteAction('play-torrent', { url: torrentURL })
+      const state = this.state
+      this.sendRemoteAction('play-torrent', { 
+        url: torrentURL,
+        verification: sha256(torrentURL + state.roomId + state.node.peerId._idB58String)
+      })
     }
     catch(ex){console.log(ex)}
   }
