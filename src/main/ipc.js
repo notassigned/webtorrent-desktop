@@ -63,6 +63,18 @@ function init () {
   })
 
   /**
+   * Multiplayer Events
+   */
+
+  ipcMain.on('roomJoined', function () {
+    menu.toggleInRoom(true)
+  })
+
+  ipcMain.on('roomLeft', function () {
+    menu.toggleInRoom(false)
+  })
+
+  /**
    * Player Events
    */
 

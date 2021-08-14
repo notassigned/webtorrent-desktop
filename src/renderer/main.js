@@ -252,8 +252,14 @@ const dispatchHandlers = {
   openFiles: () => ipcRenderer.send('openFiles'), /* shows the open file dialog */
   openTorrentAddress: () => { state.modal = { id: 'open-torrent-address-modal' } },
   openMultiplayerSettings: () => { state.modal = { id: 'open-multiplayer-settings-modal' } },
-  joinMultiplayerRoom: (username, roomId) => { controllers.libp2p().joinRoom(username, roomId) },
-  leaveMultiplayerRoom: () => controllers.libp2p().leaveRoom(),
+  joinMultiplayerRoom: (username, roomId) => { 
+    controllers.libp2p().joinRoom(username, roomId) 
+    ipcRenderer.send('roomJoined')
+  },
+  leaveMultiplayerRoom: () => {
+    controllers.libp2p().leaveRoom()
+    ipcRenderer.send('roomLeft')
+  },
   addTorrent: (torrentId) => controllers.torrentList().addTorrent(torrentId),
   playTorrentMultiplayer: (torrentId) => {
     controllers.libp2p().sendTorrent(torrentId)
@@ -296,7 +302,7 @@ const dispatchHandlers = {
   playPause: () => {
     controllers.playback().playPause()
     var action = state.playing.isPaused ? 'pause' : 'play'
-    controllers.libp2p().sendRemoteAction(action, {time: this.state.playing.currentTime})
+    controllers.libp2p().sendRemoteAction(action, {time: state.playing.currentTime})
   },
   play: () => controllers.playback().play(),
   pause: () => controllers.playback().pause(),
@@ -306,7 +312,7 @@ const dispatchHandlers = {
   skipTo: (time) => {
     controllers.playback().skipTo(time)
     controllers.libp2p().sendRemoteAction('pause', {time})
-    dispatch(pause)
+    dispatch('pause')
   },
   skipToFromRemote: (time) => {
     controllers.playback().skipTo(time)

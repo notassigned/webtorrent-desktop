@@ -103,6 +103,7 @@ function renderMedia (state) {
     }
 
     state.playing.volume = mediaElement.volume
+    state.playing.currentTime = mediaElement.currentTime
   }
 
   // Add subtitles to the <video> tag

@@ -318,7 +318,8 @@ function getMenuTemplate () {
           label: 'Leave room',
           click: () => {
             windows.main.dispatch('leaveMultiplayerRoom')
-          }
+          },
+          enabled: false
         }
       ]
     },
