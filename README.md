@@ -16,6 +16,8 @@ This fork of [Webtorrent Desktop](https://github.com/webtorrent/webtorrent-deskt
 
 To join a multiplayer room you can press CTRL+M, or click 'Torrent2gether' in the multiplayer dropdown menu. Simply enter a name (optional), and the name of a room. Anyone else who enters the same room name will be in the same [gossipsub](https://docs.libp2p.io/concepts/publish-subscribe/) topic. The application syncs play/pause/scrubbing with others in the room. You can send a torrnet to other clients in the room by right clicking it and selecting "Play in multiplayer".
 
+Check out the [libp2p controller](https://github.com/notassigned/webtorrent-desktop-multiplayer/blob/master/src/renderer/controllers/libp2p-controller.js) for a working libp2p example using bootstrapping, gossipsub, the kademlia-dht, mdns for local peer discovery, ipv4, and ipv6.
+
 ## Install
 
 ### Recommended Install
@@ -176,7 +178,7 @@ Material UI (React components that implement Google's Material Design.):
 https://material-ui.com/getting-started/installation
 
 ### Privacy
-
+and
 WebTorrent Desktop collects some basic usage stats to help us make the app better.
 For example, we track how well the play button works. How often does it succeed?
 Time out? Show a missing codec error?
