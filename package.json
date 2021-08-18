@@ -49,6 +49,7 @@
     "libp2p-noise": "^4.0.0",
     "libp2p-pubsub-peer-discovery": "^4.0.0",
     "libp2p-tcp": "^0.17.1",
+    "libp2p-webrtc-star": "^0.23.0",
     "location-history": "1.1.2",
     "material-ui": "0.20.2",
     "multiformats": "^9.4.3",

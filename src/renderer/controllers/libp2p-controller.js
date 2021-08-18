@@ -2,9 +2,8 @@ const { dispatch } = require('../lib/dispatcher')
 const sha256 = require('js-sha256')
 const Libp2p = require('libp2p')
 const TCP = require('libp2p-tcp')
-// const Websockets = require('libp2p-websockets')
-// const WStar = require('libp2p-webrtc-star')
-// const wrtc = require('electron-webrtc')
+const WStar = require('libp2p-webrtc-star')
+const wrtc = require('electron-webrtc')
 const Mplex = require('libp2p-mplex')
 const { NOISE } = require('libp2p-noise')
 const Gossipsub = require('libp2p-gossipsub')
@@ -14,7 +13,6 @@ const MDNS = require('libp2p-mdns')
 const PubsubPeerDiscovery = require('libp2p-pubsub-peer-discovery')
 const uint8ArrayFromString = require('uint8arrays/from-string')
 const uint8ArrayToString = require('uint8arrays/to-string')
-const address = require('address')
 
 const bootstrappers = [
   '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
@@ -32,10 +30,12 @@ const createNode = async () => {
       listen: [
         '/ip4/0.0.0.0/tcp/0',
         '/ip6/::/tcp/0',
+        '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
       ]
     },
     modules: {
-      transport: [TCP],
+      transport: [TCP, WStar],
       streamMuxer: [Mplex],
       connEncryption: [NOISE],
       peerDiscovery: [Bootstrap, PubsubPeerDiscovery, MDNS],
@@ -43,6 +43,11 @@ const createNode = async () => {
       dht: KadDHT
     },
     config: {
+      transport: {
+        [WStar.prototype[Symbol.toStringTag]]: {
+          wrtc
+        }
+      },
       peerDiscovery: {
         autodial: true,
         [PubsubPeerDiscovery.tag]: {
@@ -62,6 +67,13 @@ const createNode = async () => {
       pubsub: {
         enabled: true,
         emitSelf: false
+      },
+      nat: {
+        ttl: 7200, // TTL for port mappings (min 20 minutes)
+        keepAlive: true, // Refresh port mapping after TTL expires
+        pmp: {
+          enabled: true, // defaults to false
+        }
       }
     }
   })
@@ -122,7 +134,6 @@ module.exports = class Libp2pController {
 
   handleMessage(message){
     try{
-      //console.log(message)
       const state = this.state
       const msg = JSON.parse(uint8ArrayToString(message.data))
       switch(msg.type){
