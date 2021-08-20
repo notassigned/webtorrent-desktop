@@ -14,9 +14,11 @@
 ## About
 This fork of [Webtorrent Desktop](https://github.com/webtorrent/webtorrent-desktop) adds the ability to join a room with your friends and watch torrents together in a decentralized fasion. This is accomplished thanks to [libp2p](https://github.com/libp2p/libp2p), an awesome modular peer to peer networking stack.
 
-To join a multiplayer room you can press CTRL+M, or click 'Torrent2gether' in the multiplayer dropdown menu. Simply enter a name (optional), and the name of a room. Anyone else who enters the same room name will be in the same [gossipsub](https://docs.libp2p.io/concepts/publish-subscribe/) topic. The application syncs play/pause/scrubbing with others in the room. You can send a torrnet to other clients in the room by right clicking it and selecting "Play in multiplayer".
+To join a multiplayer room you can press CTRL+M, or click 'Torrent2gether' in the multiplayer dropdown menu. Simply enter a name (optional), and the name of a room. Anyone else who enters the same room name will be in the same [gossipsub](https://docs.libp2p.io/concepts/publish-subscribe/) topic. The application syncs play/pause/scrubbing with others in the room. You can send a torrent to other clients in the room by right clicking it and selecting "Play in multiplayer".
 
-Check out the [libp2p controller](https://github.com/notassigned/webtorrent-desktop-multiplayer/blob/master/src/renderer/controllers/libp2p-controller.js) for a working libp2p example using bootstrapping, gossipsub, the kademlia-dht, mdns for local peer discovery, ipv4, and ipv6.
+Check out the [libp2p controller](https://github.com/notassigned/webtorrent-desktop-multiplayer/blob/master/src/renderer/controllers/libp2p-controller.js) for a working libp2p example using bootstrapping, gossipsub, the kademlia-dht, webrtc-star for ipv4-only clients behind nat, mdns for local peer discovery, and ipv6.
+
+Currently, [js-libp2p](https://github.com/libp2p/js-libp2p) doesn't support NAT hole-punching by default other than that which is built into the webrtc-star transport. This transport requires a centralized webrtc-star server that both peers must connect to in order to see each other. If peers have ipv6 addresses, this is not necessary as ipv6 addresses are public with no need for NAT.
 
 ## Install
 
