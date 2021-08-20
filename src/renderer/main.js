@@ -302,7 +302,10 @@ const dispatchHandlers = {
   playPause: () => {
     controllers.playback().playPause()
     var action = state.playing.isPaused ? 'pause' : 'play'
-    controllers.libp2p().sendRemoteAction(action, {time: state.playing.currentTime})
+    controllers.libp2p().sendRemoteAction(action, {
+      time: state.playing.currentTime, 
+      infoHash: state.playing.infoHash
+    })
   },
   play: () => controllers.playback().play(),
   pause: () => controllers.playback().pause(),
@@ -311,7 +314,7 @@ const dispatchHandlers = {
   skip: (time) => controllers.playback().skip(time),
   skipTo: (time) => {
     controllers.playback().skipTo(time)
-    controllers.libp2p().sendRemoteAction('pause', {time})
+    controllers.libp2p().sendRemoteAction('pause', {time, infoHash: state.playing.infoHash})
     dispatch('pause')
   },
   skipToFromRemote: (time) => {

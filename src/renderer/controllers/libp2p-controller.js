@@ -31,7 +31,9 @@ const createNode = async () => {
         '/ip4/0.0.0.0/tcp/0',
         '/ip6/::/tcp/0',
         '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
-        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+        '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+        '/dns4/akasha.cloud/tcp/443/wss/p2p-webrtc-star',
+        '/dns4/morg.store/tcp/80/ws/p2p-webrtc-star'
       ]
     },
     modules: {
@@ -87,45 +89,67 @@ const createNode = async () => {
 module.exports = class Libp2pController {
   constructor (state) {
     this.state = state
-    if(typeof this.state.inRoom === 'undefined') this.state.inRoom = false
-    
+    if(typeof this.state.multiplayer === 'undefined') {
+      this.state.multiplayer = {}
+      this.state.multiplayer.inRoom = false
+    }
   }
 
   joinRoom(username, roomId){
     try{
       (async () => {
         const state = this.state
-        if(state.inRoom) {
+        const multiplayer = state.multiplayer
+        if(multiplayer.inRoom) {
           this.leaveRoom()
         }
         console.log('Joining room ' + roomId)
-        state.peerInfo = new Map()
-        state.multiplayerRoom = roomId
-        state.topic = sha256('/torrent2gether/1.0.0/'+roomId)
-        if(typeof state.node === 'undefined'){
-          state.node = await createNode()
+        multiplayer.peerInfo = new Map()
+        multiplayer.roomId = roomId
+        multiplayer.topic = sha256('/torrent2gether/1.0.0/'+roomId)
+        if(typeof multiplayer.node === 'undefined'){
+          multiplayer.node = await createNode()
         }
-        
-        state.username = username
+        const node = multiplayer.node
+        multiplayer.username = username
   
-        state.node.pubsub.subscribe(state.topic)
+        node.pubsub.subscribe(multiplayer.topic)
       
-        state.node.pubsub.on(state.topic, (msg) => {
+        node.pubsub.on(multiplayer.topic, (msg) => {
           this.handleMessage(msg)
         })
-        console.log('started libp2p node ' + state.node.peerId)
+        console.log('Started libp2p node ' + node.peerId._idB58String)
         
         //start send state interval
-        state.broadcastInterval = setInterval(() => {
+        multiplayer.broadcastInterval = setInterval(() => {
           this.sendState()
         }, 2000)
         //start peer check interval
-        state.peerCheckInterval = setInterval(() => {
+        multiplayer.peerCheckInterval = setInterval(() => {
           this.peerCheck()
         }, 2000)
         
-        state.inRoom = true
+        multiplayer.inRoom = true
       })()
+    }
+    catch(ex){
+      console.log(ex)
+    }
+  }
+
+  leaveRoom(){
+    try{
+      const multiplayer = this.state.multiplayer
+      if (!multiplayer.inRoom) return;
+      multiplayer.inRoom = false;
+      this.sendRemoteAction('disconnect', null);
+      (async () => { 
+        await multiplayer.node.pubsub.unsubscribe(multiplayer.topic) 
+      })()
+      multiplayer.peerInfo.clear()
+      clearInterval(multiplayer.broadcastInterval)
+      clearInterval(multiplayer.peerCheckInterval)
+      console.log('Left room ' + multiplayer.roomId)
     }
     catch(ex){
       console.log(ex)
@@ -134,17 +158,19 @@ module.exports = class Libp2pController {
 
   handleMessage(message){
     try{
-      const state = this.state
+      const multiplayer = this.state.multiplayer
+      if (!multiplayer.inRoom) return;
+      const peerInfo = multiplayer.peerInfo
       const msg = JSON.parse(uint8ArrayToString(message.data))
       switch(msg.type){
         case 'identify':
-          if(state.peerInfo.has(message.receivedFrom)){
-            state.peerInfo.get(message.receivedFrom).name = msg.name
-            state.peerInfo.get(message.receivedFrom).lastHeard = new Date().getTime()
+          if(peerInfo.has(message.receivedFrom)){
+            peerInfo.get(message.receivedFrom).name = msg.name
+            peerInfo.get(message.receivedFrom).lastHeard = new Date().getTime()
           }
           else{
-            console.log('peer joined: ' + msg.name)
-            state.peerInfo.set(message.receivedFrom, {
+            console.log('Peer joined: ' + msg.name)
+            peerInfo.set(message.receivedFrom, {
               name: msg.name, 
               lastHeard: new Date().getTime()
             })
@@ -154,9 +180,6 @@ module.exports = class Libp2pController {
           this.handleRemoteAction(msg.remoteAction.action, 
             msg.remoteAction.args, message.receivedFrom)
           break
-        case 'disconnect':
-          this.peerDisconnected(message.receivedFrom)
-          break
       }
     }
     catch(ex){console.log(ex)}
@@ -165,64 +188,43 @@ module.exports = class Libp2pController {
   handleRemoteAction(action, args, from){
     try {
       const state = this.state
-      if(!state.inRoom) return
+      const multiplayer = state.multiplayer
+      if(!multiplayer.inRoom) return
       switch(action)
       {
         case 'play-torrent':
           //todo: ask user first
           //verify by hashing url with room id
           //only those with roomId can add torrents
-          if(sha256(args.url + state.roomId + from) == args.verification)
+          if(sha256(args.url + multiplayer.roomId + from) == args.verification)
             dispatch('addTorrent', args.url)
           else console.log('Remote torrent verification failed')
           break
         case 'play':
-          dispatch('skipToFromRemote', args.time)
-          dispatch('play')
-          break
         case 'pause':
-          dispatch('pause')
-          dispatch('skipToFromRemote', args.time)
+          if(state.playing.infoHash === args.infoHash){ //check if watching same torrent
+            dispatch('skipToFromRemote', args.time)
+            dispatch(action)
+          }
           break
+        case 'disconnect':
+          this.peerDisconnected(from)
       }
     } catch (ex) {
       console.log(ex)
     }
   }
 
-  leaveRoom(){
-    try{
-      const state = this.state
-      if (!state.inRoom) return;
-      state.inRoom = false;
-      var disconnectMsg = {
-        type: 'disconnect'
-      } 
-      this.state.node.pubsub.publish(
-        this.state.topic, 
-        uint8ArrayFromString(JSON.stringify(disconnectMsg))
-      )
-      (async () => { await state.node.pubsub.unsubscribe(state.topic) })()
-      state.peerInfo.clear()
-      clearInterval(state.broadcastInterval)
-      clearInterval(state.peerCheckInterval)
-      console.log('Left room ' + state.multiplayerRoom)
-    }
-    catch(ex){
-      console.log(ex)
-    }
-  }
-
-  sendSkipTo(time){
+  sendSkipTo(time, torrentHash){
     this.sendRemoteAction('skipTo', {time})
   }
 
   sendTorrent(torrentURL){
     try{
-      const state = this.state
+      const multiplayer = this.state.multiplayer
       this.sendRemoteAction('play-torrent', { 
         url: torrentURL,
-        verification: sha256(torrentURL + state.roomId + state.node.peerId._idB58String)
+        verification: sha256(torrentURL + multiplayer.roomId + multiplayer.node.peerId._idB58String)
       })
     }
     catch(ex){console.log(ex)}
@@ -230,7 +232,8 @@ module.exports = class Libp2pController {
 
   sendRemoteAction(action, args){
     try{
-      if(!this.state.inRoom) return
+      const multiplayer = this.state.multiplayer
+      if(!multiplayer.inRoom) return
       var msg = {
         type: 'remoteAction',
         remoteAction: {
@@ -238,21 +241,24 @@ module.exports = class Libp2pController {
           args
         }
       }
-      this.state.node.pubsub.publish(this.state.topic, 
-        uint8ArrayFromString(JSON.stringify(msg)))
+      multiplayer.node.pubsub.publish(
+        multiplayer.topic, 
+        uint8ArrayFromString(JSON.stringify(msg))
+      )
     }
     catch(ex){console.log(ex)}
   }
 
   sendState(){
     try {
-      if(!this.state.inRoom) return;
+      const multiplayer = this.state.multiplayer
+      if(!multiplayer.inRoom) return;
       var curState = {
         type: 'identify',
-        name: this.state.username
+        name: multiplayer.username
       }
-      this.state.node.pubsub.publish(
-        this.state.topic, 
+      multiplayer.node.pubsub.publish(
+        multiplayer.topic, 
         uint8ArrayFromString(JSON.stringify(curState))
       )
     } catch (e) {
@@ -263,7 +269,7 @@ module.exports = class Libp2pController {
   peerCheck(){ //check to see which peers are "online" at interval
     try{
       const now = new Date().getTime()
-      for (const [peer, peerInfo] of this.state.peerInfo) {
+      for (const [peer, peerInfo] of this.state.multiplayer.peerInfo) {
         if(now-peerInfo.lastHeard > 10000){
           this.peerDisconnected(peer)
         }
@@ -275,10 +281,10 @@ module.exports = class Libp2pController {
   }
 
   peerDisconnected(id){
-    const state = this.state
-    if(state.peerInfo.has(id)){
-      console.log('peer disconnected: ' + state.peerInfo.get(id).name)
-      state.peerInfo.delete(id)
+    const multiplayer = this.state.multiplayer
+    if(multiplayer.peerInfo.has(id)){
+      console.log('Peer disconnected: ' + multiplayer.peerInfo.get(id).name)
+      multiplayer.peerInfo.delete(id)
     }
   }
 }
